@@ -57,16 +57,16 @@ jobs:
           # Extract the tag name from the existing_tag
           tag_name=$(echo "${{ env.existing_tag }}" | awk -F'/' '{print $3}')
           
-          # Check if tag_name is not empty
-          if [ -n "$tag_name" ]; then
-            # Delete the tag locally if it exists
+          # Check if the tag exists locally before attempting to delete it
+          if git rev-parse "$tag_name" >/dev/null 2>&1; then
+            echo "Tag $tag_name found locally, deleting it."
             git tag -d "$tag_name"
-      
-            # Delete the tag from the remote if it exists
-            git push origin :refs/tags/"$tag_name"
           else
-            echo "Tag name is empty, skipping deletion."
+            echo "Tag $tag_name not found locally, skipping local deletion."
           fi
+          
+          # Always attempt to delete the tag from the remote
+          git push origin :refs/tags/"$tag_name"
 
       - name: Create New Git Tag
         run: |
