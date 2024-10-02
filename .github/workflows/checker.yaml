@@ -54,11 +54,14 @@ jobs:
       - name: Delete Old Tag Locally and Remotely
         if: ${{ env.existing_tag != '' }}
         run: |
+          # Extract the tag name from the existing_tag
+          tag_name="${{ steps.apk-info.outputs.version-name }}"
+
           # Delete the tag locally if it exists
-          git tag -d ${{ steps.apk-info.outputs.version-name }}
+          git tag -d "$tag_name"
 
           # Delete the tag from the remote if it exists
-          git push origin :refs/tags/${{ steps.apk-info.outputs.version-name }}
+          git push origin :refs/tags/"$tag_name"
 
       - name: Create New Git Tag
         run: |
