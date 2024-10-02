@@ -48,16 +48,16 @@ jobs:
       - name: Get Existing Tag
         id: existing-tag
         run: |
-          existing_tag=$(git tag --list "${{ steps.apk-info.outputs.version-name }}")
+          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.apk-info.outputs.version-name }}" || echo "")
           echo "existing_tag=${existing_tag}" >> $GITHUB_ENV
 
-      - name: Delete Old Tag If Exists (Local and Remote)
+      - name: Delete Old Tag Locally and Remotely
         if: ${{ env.existing_tag != '' }}
         run: |
-          # Delete tag locally
+          # Delete the tag locally if it exists
           git tag -d ${{ steps.apk-info.outputs.version-name }}
 
-          # Delete tag remotely
+          # Delete the tag from the remote if it exists
           git push origin :refs/tags/${{ steps.apk-info.outputs.version-name }}
 
       - name: Create New Git Tag
