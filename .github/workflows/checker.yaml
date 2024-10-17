@@ -6,7 +6,7 @@ on:
 env:
   status: failure
   workflow_name: none
-  eapk-path: none
+  eapk-path: none  # Change the variable name from apk-path to eapk-path
   repo-title: none
 
 jobs:
@@ -26,42 +26,59 @@ jobs:
           echo "status=$(jq -r '.status' data/info.json)" >> $GITHUB_ENV
           echo "workflow_name=$(jq -r '.workflow.title' data/info.json)" >> $GITHUB_ENV
           echo "repo-title=$(jq -r '.workflow.repo' data/settings.json)" >> $GITHUB_ENV
-          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1)" >> $GITHUB_ENV
+          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1)" >> $GITHUB_ENV  # Change apk-path to eapk-path
 
       - name: Make Commit Log
         run: |
           echo "$(jq -r '.["commit-log"]' data/info.json)" > ./data/commit-log.txt
 
-      # Debug step to check eAPK version (you might need to adapt this part based on how you're managing versions)
-      - name: Debug eAPK Version
+      - name: Get EAPK Info  # Change to EAPK info if needed
+        id: eapk-info  # Change the ID to eapk-info
+        if: ${{ env.status == 'success' }}
+        uses: hkusu/apk-info-action@v1
+        with:
+          apk-path: ${{ env.eapk-path }}  # Change apk-path to eapk-path
+
+      # Debug step to check eapk version
+      - name: Debug EAPK Version  # Change to Debug EAPK Version
         run: |
-          echo "eAPK file path: ${{ env.eapk-path }}"
+          echo "EAPK version name: ${{ steps.eapk-info.outputs['version-name'] }}"  # Change apk-info to eapk-info
 
       # Ensure the tag is created
       - name: Get Existing Tag
         id: existing-tag
         run: |
-          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.apk-info.outputs.version-name }}" || echo "")
+          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.eapk-info.outputs.version-name }}" || echo "")  # Change apk-info to eapk-info
           echo "existing_tag=${existing_tag}" >> $GITHUB_ENV
 
       - name: Delete Old Tag Locally and Remotely
         if: ${{ env.existing_tag != '' }}
         run: |
+          # Extract the tag name from the existing_tag
           tag_name=$(echo "${{ env.existing_tag }}" | awk -F'/' '{print $3}')
           
+          # Check if the tag exists locally before attempting to delete it
           if git rev-parse "$tag_name" >/dev/null 2>&1; then
+            echo "Tag $tag_name found locally, deleting it."
             git tag -d "$tag_name"
+          else
+            echo "Tag $tag_name not found locally, skipping local deletion."
           fi
+          
+          # Always attempt to delete the tag from the remote
           git push origin :refs/tags/"$tag_name"
 
       - name: Create New Git Tag
         run: |
-          git tag ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
-          git push origin ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
+          # Create new tag locally
+          git tag ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}  # Change apk-info to eapk-info
+
+          # Push new tag to remote
+          git push origin ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}  # Change apk-info to eapk-info
 
       - name: Commit Changes
         run: |
-          git config --global user.email "eapk-artifacts-downloader@github.com"
+          git config --global user.email "apk-artifacts-downloader@github.com"
           git config --global user.name "${{ github.repository_owner }}"
           git add .
           git commit -m "Update ${{ env.repo-title }} to latest version"
@@ -70,14 +87,14 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          if: ${{ env.status == 'success' }}
+        if: ${{ env.status == 'success' }}
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         if: ${{ env.status == 'success' }}
         with:
-          files: ./archive/*.eapk
-          tag_name: ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
+          files: ./archive/*.eapk  # Change to match .eapk files
+          tag_name: ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}  # Change apk-info to eapk-info
           name: ${{ env.workflow_name }}
           body_path: ./data/commit-log.txt
 
