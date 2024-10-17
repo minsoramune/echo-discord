@@ -45,13 +45,11 @@ jobs:
         with:
           apk-path: ${{ env.apk-path }}
 
-      # Debug step to check eapk version
       - name: Debug Eapk Version
         if: ${{ steps.eapk-info.outputs['version-name'] != '' }}
         run: |
           echo "eapk version name: ${{ steps.eapk-info.outputs['version-name'] }}"
 
-      # Ensure the tag is created
       - name: Get Existing Tag
         id: existing-tag
         if: ${{ env.apk-path != 'none' }}
