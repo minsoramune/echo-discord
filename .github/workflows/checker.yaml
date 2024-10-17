@@ -26,21 +26,29 @@ jobs:
           echo "status=$(jq -r '.status' data/info.json)" >> $GITHUB_ENV
           echo "workflow_name=$(jq -r '.workflow.title' data/info.json)" >> $GITHUB_ENV
           echo "repo-title=$(jq -r '.workflow.repo' data/settings.json)" >> $GITHUB_ENV
-          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1 || echo '')" >> $GITHUB_ENV
+          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1)" >> $GITHUB_ENV
 
       - name: Make Commit Log
         run: |
           echo "$(jq -r '.["commit-log"]' data/info.json)" > ./data/commit-log.txt
 
-      # Debug step to check eAPK version
+      - name: Get eApk Info
+        id: eapk-info
+        if: ${{ env.status == 'success' }}
+        uses: hkusu/apk-info-action@v1
+        with:
+          apk-path: ${{ env.eapk-path }}
+
+      # Debug step to check eapk version
       - name: Debug eAPK Version
         run: |
-          echo "eAPK file path: ${{ env.eapk-path }}"
+          echo "eAPK version name: ${{ steps.eapk-info.outputs['version-name'] }}"
 
+      # Ensure the tag is created
       - name: Get Existing Tag
         id: existing-tag
         run: |
-          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.apk-info.outputs.version-name }}" || echo "")
+          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.eapk-info.outputs.version-name }}" || echo "")
           echo "existing_tag=${existing_tag}" >> $GITHUB_ENV
 
       - name: Delete Old Tag Locally and Remotely
@@ -55,8 +63,8 @@ jobs:
 
       - name: Create New Git Tag
         run: |
-          git tag ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
-          git push origin ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
+          git tag ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
+          git push origin ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
 
       - name: Commit Changes
         run: |
@@ -69,13 +77,14 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          if: ${{ env.status == 'success' }}
 
       - name: Publish Release
-        if: ${{ env.status == 'success' && env.eapk-path != '' }}
         uses: softprops/action-gh-release@v2
+        if: ${{ env.status == 'success' }}
         with:
           files: ./archive/*.eapk
-          tag_name: ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
+          tag_name: ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
           name: ${{ env.workflow_name }}
           body_path: ./data/commit-log.txt
 
