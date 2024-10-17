@@ -6,7 +6,7 @@ on:
 env:
   status: failure
   workflow_name: none
-  eapk-path: none
+  apk-path: none
   repo-title: none
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
         if: ${{ env.status == 'success' }}
         uses: hkusu/apk-info-action@v1
         with:
-          eapk-path: ${{ env.eapk-path }}
+          apk-path: ${{ env.eapk-path }}
 
       # Debug step to check eapk version
       - name: Debug Eapk Version
