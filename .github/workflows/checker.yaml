@@ -34,6 +34,14 @@ jobs:
             echo "apk-path=$apk_file" >> $GITHUB_ENV
           fi
 
+      - name: Debug Environment Variables
+        run: |
+          echo "Status: ${{ env.status }}"
+          echo "APK Path: ${{ env.apk-path }}"
+
+      - name: List archive files
+        run: ls -lah archive/
+
       - name: Make Commit Log
         run: |
           echo "$(jq -r '.["commit-log"]' data/info.json)" > ./data/commit-log.txt
@@ -87,7 +95,7 @@ jobs:
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
-        if: ${{ env.status == 'success' && env.apk-path != 'none' }}
+        if: always()  # This ensures the release is attempted even if apk or status are not available
         with:
           files: ./archive/*.eapk
           tag_name: ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
