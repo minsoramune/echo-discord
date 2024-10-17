@@ -26,10 +26,14 @@ jobs:
           echo "status=$(jq -r '.status' data/info.json)" >> $GITHUB_ENV
           echo "workflow_name=$(jq -r '.workflow.title' data/info.json)" >> $GITHUB_ENV
           echo "repo-title=$(jq -r '.workflow.repo' data/settings.json)" >> $GITHUB_ENV
+          
+          # Get the eapk path
           eapk=$(ls -S archive/*.eapk 2>/dev/null || echo "")
           echo "eapk-path=${eapk}" >> $GITHUB_ENV
+
+          # Check if eapk is empty and log a warning to the console instead of GITHUB_ENV
           if [ -z "${eapk}" ]; then
-            echo "Warning: No .eapk files found in archive directory." >> $GITHUB_ENV
+            echo "Warning: No .eapk files found in archive directory."
           fi
 
       - name: List Archive Contents
@@ -43,7 +47,7 @@ jobs:
           apk-path: ${{ env.eapk-path }}
 
       - name: Debug EAPK Version
-        if: ${{ env.eapk-path != '' }}  # Ensure this runs only if eapk-path is set
+        if: ${{ env.eapk-path != '' }}
         run: |
           echo "EAPK version name: ${{ steps.eapk-info.outputs['version-name'] }}"
 
