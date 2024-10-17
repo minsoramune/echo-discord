@@ -91,8 +91,7 @@ func ExtractFromZip(zipFile string, outputDir string) error {
 
 	var filesToExtract []string
 	for _, file := range reader.File {
-		ext := filepath.Ext(file.Name)
-		if ext == ".apk" || ext == ".eapk" {
+		if path.Ext(file.Name) == ".apk" {
 			filesToExtract = append(filesToExtract, file.Name)
 		}
 	}
