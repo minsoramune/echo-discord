@@ -35,7 +35,7 @@ jobs:
       - name: Get Eapk Info
         id: eapk-info
         if: ${{ env.status == 'success' }}
-        uses: hkusu/eapk-info-action@v1
+        uses: hkusu/apk-info-action@v1
         with:
           eapk-path: ${{ env.eapk-path }}
 
