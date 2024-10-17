@@ -26,18 +26,17 @@ jobs:
           echo "status=$(jq -r '.status' data/info.json)" >> $GITHUB_ENV
           echo "workflow_name=$(jq -r '.workflow.title' data/info.json)" >> $GITHUB_ENV
           echo "repo-title=$(jq -r '.workflow.repo' data/settings.json)" >> $GITHUB_ENV
-          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1)" >> $GITHUB_ENV
+          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1 || echo '')" >> $GITHUB_ENV
 
       - name: Make Commit Log
         run: |
           echo "$(jq -r '.["commit-log"]' data/info.json)" > ./data/commit-log.txt
 
-      # Debug step to check eAPK version (you might need to adapt this part based on how you're managing versions)
+      # Debug step to check eAPK version
       - name: Debug eAPK Version
         run: |
           echo "eAPK file path: ${{ env.eapk-path }}"
 
-      # Ensure the tag is created
       - name: Get Existing Tag
         id: existing-tag
         run: |
@@ -70,11 +69,10 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          if: ${{ env.status == 'success' }}
 
       - name: Publish Release
+        if: ${{ env.status == 'success' && env.eapk-path != '' }}
         uses: softprops/action-gh-release@v2
-        if: ${{ env.status == 'success' }}
         with:
           files: ./archive/*.eapk
           tag_name: ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
