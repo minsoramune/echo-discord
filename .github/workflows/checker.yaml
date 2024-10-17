@@ -32,23 +32,16 @@ jobs:
         run: |
           echo "$(jq -r '.["commit-log"]' data/info.json)" > ./data/commit-log.txt
 
-      - name: Get eApk Info
-        id: eapk-info
-        if: ${{ env.status == 'success' }}
-        uses: hkusu/apk-info-action@v1
-        with:
-          apk-path: ${{ env.eapk-path }}
-
-      # Debug step to check eapk version
+      # Debug step to check eAPK version (you might need to adapt this part based on how you're managing versions)
       - name: Debug eAPK Version
         run: |
-          echo "eAPK version name: ${{ steps.eapk-info.outputs['version-name'] }}"
+          echo "eAPK file path: ${{ env.eapk-path }}"
 
       # Ensure the tag is created
       - name: Get Existing Tag
         id: existing-tag
         run: |
-          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.eapk-info.outputs.version-name }}" || echo "")
+          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.apk-info.outputs.version-name }}" || echo "")
           echo "existing_tag=${existing_tag}" >> $GITHUB_ENV
 
       - name: Delete Old Tag Locally and Remotely
@@ -63,8 +56,8 @@ jobs:
 
       - name: Create New Git Tag
         run: |
-          git tag ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
-          git push origin ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
+          git tag ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
+          git push origin ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
 
       - name: Commit Changes
         run: |
@@ -84,7 +77,7 @@ jobs:
         if: ${{ env.status == 'success' }}
         with:
           files: ./archive/*.eapk
-          tag_name: ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
+          tag_name: ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
           name: ${{ env.workflow_name }}
           body_path: ./data/commit-log.txt
 
