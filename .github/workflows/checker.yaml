@@ -26,7 +26,7 @@ jobs:
           echo "status=$(jq -r '.status' data/info.json)" >> $GITHUB_ENV
           echo "workflow_name=$(jq -r '.workflow.title' data/info.json)" >> $GITHUB_ENV
           echo "repo-title=$(jq -r '.workflow.repo' data/settings.json)" >> $GITHUB_ENV
-          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1)" >> $GITHUB_ENV
+          echo "apk-path=$(ls -S archive/*.eapk | head -n 1)" >> $GITHUB_ENV
 
       - name: Make Commit Log
         run: |
