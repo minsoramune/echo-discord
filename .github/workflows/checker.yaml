@@ -26,28 +26,26 @@ jobs:
           echo "status=$(jq -r '.status' data/info.json)" >> $GITHUB_ENV
           echo "workflow_name=$(jq -r '.workflow.title' data/info.json)" >> $GITHUB_ENV
           echo "repo-title=$(jq -r '.workflow.repo' data/settings.json)" >> $GITHUB_ENV
-          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1)" >> $GITHUB_ENV  # Changed apk-path to eapk-path
+          eapk=$(ls -S archive/*.eapk 2>/dev/null || echo "")
+          echo "eapk-path=${eapk}" >> $GITHUB_ENV
+          if [ -z "${eapk}" ]; then
+            echo "Warning: No .eapk files found in archive directory." >> $GITHUB_ENV
+          fi
 
-      # Debug step to check eapk path
-      - name: Debug EAPK Path
-        run: |
-          echo "EAPK Path: ${{ env.eapk-path }}"
+      - name: List Archive Contents
+        run: ls -al archive/
 
-      - name: Make Commit Log
-        run: |
-          echo "$(jq -r '.["commit-log"]' data/info.json)" > ./data/commit-log.txt
-
-      - name: Get EAPK Info  # Changed to EAPK info if needed
-        id: eapk-info  # Changed the ID to eapk-info
-        if: ${{ env.status == 'success' }}
+      - name: Get EAPK Info
+        id: eapk-info
+        if: ${{ env.status == 'success' && env.eapk-path != '' }}
         uses: hkusu/apk-info-action@v1
         with:
-          apk-path: ${{ env.eapk-path }}  # Changed apk-path to eapk-path
+          apk-path: ${{ env.eapk-path }}
 
-      # Debug step to check eapk version
-      - name: Debug EAPK Version  # Changed to Debug EAPK Version
+      - name: Debug EAPK Version
+        if: ${{ env.eapk-path != '' }}  # Ensure this runs only if eapk-path is set
         run: |
-          echo "EAPK version name: ${{ steps.eapk-info.outputs['version-name'] }}"  # Changed apk-info to eapk-info
+          echo "EAPK version name: ${{ steps.eapk-info.outputs['version-name'] }}"
 
       # Ensure the tag is created
       - name: Get Existing Tag
