@@ -109,8 +109,9 @@ func DownloadArtifacts(runID int64) error {
 
 	files, _ := os.ReadDir("archive")
 	Parallel(files, func(file os.DirEntry) {
-		if file.IsDir() || file.Name()[len(file.Name())-4:] != ".eapk" {
-			os.Remove("archive/" + file.Name())
+		name := file.Name()
+		if file.IsDir() || (!strings.HasSuffix(name, ".eapk") && !strings.HasSuffix(name, ".apk")) {
+			os.Remove("archive/" + name)
 		}
 	})
 
@@ -157,4 +158,4 @@ func getCommitHistory(since, until time.Time) error {
 // 	}
 
 // 	return rateLimit.Core.Remaining
-// }
+//
