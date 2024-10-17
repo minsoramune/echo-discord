@@ -6,7 +6,7 @@ on:
 env:
   status: failure
   workflow_name: none
-  apk-path: none
+  eapk-path: none
   repo-title: none
 
 jobs:
@@ -26,29 +26,29 @@ jobs:
           echo "status=$(jq -r '.status' data/info.json)" >> $GITHUB_ENV
           echo "workflow_name=$(jq -r '.workflow.title' data/info.json)" >> $GITHUB_ENV
           echo "repo-title=$(jq -r '.workflow.repo' data/settings.json)" >> $GITHUB_ENV
-          echo "apk-path=$(ls -S archive/*.apk | head -n 1)" >> $GITHUB_ENV
+          echo "eapk-path=$(ls -S archive/*.eapk | head -n 1)" >> $GITHUB_ENV
 
       - name: Make Commit Log
         run: |
           echo "$(jq -r '.["commit-log"]' data/info.json)" > ./data/commit-log.txt
 
-      - name: Get Apk Info
-        id: apk-info
+      - name: Get Eapk Info
+        id: eapk-info
         if: ${{ env.status == 'success' }}
-        uses: hkusu/apk-info-action@v1
+        uses: hkusu/eapk-info-action@v1
         with:
-          apk-path: ${{ env.apk-path }}
+          eapk-path: ${{ env.eapk-path }}
 
-      # Debug step to check apk version
-      - name: Debug APK Version
+      # Debug step to check eapk version
+      - name: Debug Eapk Version
         run: |
-          echo "APK version name: ${{ steps.apk-info.outputs['version-name'] }}"
+          echo "eapk version name: ${{ steps.eapk-info.outputs['version-name'] }}"
 
       # Ensure the tag is created
       - name: Get Existing Tag
         id: existing-tag
         run: |
-          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.apk-info.outputs.version-name }}" || echo "")
+          existing_tag=$(git ls-remote --tags origin | grep "refs/tags/${{ steps.eapk-info.outputs.version-name }}" || echo "")
           echo "existing_tag=${existing_tag}" >> $GITHUB_ENV
 
       - name: Delete Old Tag Locally and Remotely
@@ -71,14 +71,14 @@ jobs:
       - name: Create New Git Tag
         run: |
           # Create new tag locally
-          git tag ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
+          git tag ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
 
           # Push new tag to remote
-          git push origin ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
+          git push origin ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
 
       - name: Commit Changes
         run: |
-          git config --global user.email "apk-artifacts-downloader@github.com"
+          git config --global user.email "eapk-artifacts-downloader@github.com"
           git config --global user.name "${{ github.repository_owner }}"
           git add .
           git commit -m "Update ${{ env.repo-title }} to latest version"
@@ -93,8 +93,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: ${{ env.status == 'success' }}
         with:
-          files: ./archive/*.apk
-          tag_name: ${{ steps.apk-info.outputs.version-name || 'v1.0.0' }}
+          files: ./archive/*.eapk
+          tag_name: ${{ steps.eapk-info.outputs.version-name || 'v1.0.0' }}
           name: ${{ env.workflow_name }}
           body_path: ./data/commit-log.txt
 
