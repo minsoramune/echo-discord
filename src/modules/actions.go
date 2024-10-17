@@ -109,7 +109,7 @@ func DownloadArtifacts(runID int64) error {
 
 	files, _ := os.ReadDir("archive")
 	Parallel(files, func(file os.DirEntry) {
-		if file.IsDir() || file.Name()[len(file.Name())-4:] != ".apk" {
+		if file.IsDir() || file.Name()[len(file.Name())-4:] != ".eapk" {
 			os.Remove("archive/" + file.Name())
 		}
 	})
